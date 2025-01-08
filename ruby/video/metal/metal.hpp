@@ -6,9 +6,13 @@
 //
 
 #include <Metal/Metal.h>
-#include <MetalKit/MetalKit.h>
+#include <MetalKit/MTKView.h>
 
+#if defined(CMAKE)
+#include <librashader/librashader_ld.h>
+#else
 #include "librashader_ld.h"
+#endif
 #include "ShaderTypes.h"
 
 struct Metal;
@@ -99,6 +103,5 @@ struct Metal {
   libra_instance_t _libra;
   libra_shader_preset_t _preset;
   libra_mtl_filter_chain_t _filterChain;
-  libra_viewport_t _libraViewport;
   bool initialized = false;
 };

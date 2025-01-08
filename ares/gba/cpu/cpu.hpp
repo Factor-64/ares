@@ -56,7 +56,7 @@ struct CPU : ARM7TDMI, Thread, IO {
   auto prefetchSync(n32 address) -> void;
   auto prefetchStep(u32 clocks) -> void;
   auto prefetchReset() -> void;
-  auto prefetchRead(u32 mode) -> n32;
+  auto prefetchRead() -> n16;
 
   //bus.cpp
   auto sleep() -> void override;
@@ -64,6 +64,8 @@ struct CPU : ARM7TDMI, Thread, IO {
   auto get(u32 mode, n32 address) -> n32 override;
   auto getDebugger(u32 mode, n32 address) -> n32 override;
   auto set(u32 mode, n32 address, n32 word) -> void override;
+  auto lock() -> void override;
+  auto unlock() -> void override;
   auto _wait(u32 mode, n32 address) -> u32;
 
   //io.cpp
@@ -160,7 +162,8 @@ struct CPU : ARM7TDMI, Thread, IO {
     n1  transferEnableReceive;
     n1  transferEnableSend;
     n1  startBit;
-    n1  transferLength;
+    n4  uartFlags;
+    n2  mode;
     n1  irqEnable;
 
     n16 data[4];
@@ -204,8 +207,8 @@ struct CPU : ARM7TDMI, Thread, IO {
   } joybus;
 
   struct IRQ {
-    n1  ime;
-    n1  synchronizer[2];
+    n1  ime[2];
+    n1  synchronizer;
     n16 enable[2];
     n16 flag[2];
   } irq;
@@ -226,6 +229,13 @@ struct CPU : ARM7TDMI, Thread, IO {
     n4 unknown2;
   } memory;
 
+  struct OpenBus {
+    auto get(u32 mode, n32 address) -> n32;
+    auto set(u32 mode, n32 address, n32 word) -> void;
+    n32 data;
+    n32 iwramData;
+  } openBus;
+
   struct {
     auto empty() const { return addr == load; }
     auto full() const { return load - addr == 16; }
@@ -235,6 +245,7 @@ struct CPU : ARM7TDMI, Thread, IO {
     n32 addr;       //read location of slot buffer
     n32 load;       //write location of slot buffer
     i32 wait = 1;  //number of clocks before next slot load
+    n1  stopped = 1;
   } prefetch;
 
   struct Context {
@@ -245,8 +256,8 @@ struct CPU : ARM7TDMI, Thread, IO {
     n1  dmaRan;
     n1  dmaRomAccess;
     n1  dmaActive;
-    n1  prefetchActive;
     n1  timerLatched;
+    n1  busLocked;
   } context;
 };
 

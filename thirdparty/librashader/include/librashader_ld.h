@@ -32,10 +32,10 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #define LIBRA_RUNTIME_OPENGL
 // #define LIBRA_RUNTIME_VULKAN
 
-#if defined(_WIN32)
-#define LIBRA_RUNTIME_D3D11
-#define LIBRA_RUNTIME_D3D12
-#endif
+// #if defined(_WIN32)
+// #define LIBRA_RUNTIME_D3D11
+// #define LIBRA_RUNTIME_D3D12
+// #endif
 
 #if (defined(__APPLE__) && defined(__OBJC__))
 #define LIBRA_RUNTIME_METAL
@@ -178,7 +178,7 @@ libra_error_t __librashader__noop_preset_set_param(
 }
 
 libra_error_t __librashader__noop_preset_get_param(
-    libra_shader_preset_t *preset, const char *name, float *value) {
+    const libra_shader_preset_t *preset, const char *name, float *value) {
     return NULL;
 }
 
@@ -186,7 +186,7 @@ libra_error_t __librashader__noop_preset_print(libra_shader_preset_t *preset) {
     return NULL;
 }
 libra_error_t __librashader__noop_preset_get_runtime_params(
-    libra_shader_preset_t *preset, struct libra_preset_param_list_t *out) {
+    const libra_shader_preset_t *preset, struct libra_preset_param_list_t *out) {
     return NULL;
 }
 libra_error_t __librashader__noop_preset_free_runtime_params(
@@ -194,12 +194,9 @@ libra_error_t __librashader__noop_preset_free_runtime_params(
     return NULL;
 }
 #if defined(LIBRA_RUNTIME_OPENGL)
-libra_error_t __librashader__noop_gl_init_context(libra_gl_loader_t loader) {
-    return NULL;
-}
-
 libra_error_t __librashader__noop_gl_filter_chain_create(
-    libra_shader_preset_t *preset, const struct filter_chain_gl_opt_t *options,
+    libra_shader_preset_t *preset, libra_gl_loader_t loader,
+    const struct filter_chain_gl_opt_t *options,
     libra_gl_filter_chain_t *out) {
     *out = NULL;
     return NULL;
@@ -207,8 +204,8 @@ libra_error_t __librashader__noop_gl_filter_chain_create(
 
 libra_error_t __librashader__noop_gl_filter_chain_frame(
     libra_gl_filter_chain_t *chain, size_t frame_count,
-    struct libra_source_image_gl_t image, struct libra_viewport_t viewport,
-    struct libra_output_framebuffer_gl_t out, const float *mvp,
+    struct libra_image_gl_t image, struct libra_image_gl_t out,
+    const struct libra_viewport_t *viewport, const float *mvp,
     const struct frame_gl_opt_t *opt) {
     return NULL;
 }
@@ -224,7 +221,7 @@ libra_error_t __librashader__noop_gl_filter_chain_set_param(
 }
 
 libra_error_t __librashader__noop_gl_filter_chain_get_param(
-    libra_gl_filter_chain_t *chain, const char *param_name, float *out) {
+    const libra_gl_filter_chain_t *chain, const char *param_name, float *out) {
     return NULL;
 }
 
@@ -234,7 +231,7 @@ libra_error_t __librashader__noop_gl_filter_chain_set_active_pass_count(
 }
 
 libra_error_t __librashader__noop_gl_filter_chain_get_active_pass_count(
-    libra_gl_filter_chain_t *chain, uint32_t *out) {
+    const libra_gl_filter_chain_t *chain, uint32_t *out) {
     return NULL;
 }
 #endif
@@ -257,9 +254,9 @@ libra_error_t __librashader__noop_vk_filter_chain_create_deferred(
 
 libra_error_t __librashader__noop_vk_filter_chain_frame(
     libra_vk_filter_chain_t *chain, VkCommandBuffer command_buffer,
-    size_t frame_count, struct libra_source_image_vk_t image,
-    struct libra_viewport_t viewport, struct libra_output_image_vk_t out,
-    const float *mvp, const struct frame_vk_opt_t *opt) {
+    size_t frame_count, struct libra_image_vk_t image, struct libra_image_vk_t out,
+    const struct libra_viewport_t *viewport, const float *mvp,
+    const struct frame_vk_opt_t *opt) {
     return NULL;
 }
 
@@ -274,7 +271,7 @@ libra_error_t __librashader__noop_vk_filter_chain_set_param(
 }
 
 libra_error_t __librashader__noop_vk_filter_chain_get_param(
-    libra_vk_filter_chain_t *chain, const char *param_name, float *out) {
+    const libra_vk_filter_chain_t *chain, const char *param_name, float *out) {
     return NULL;
 }
 
@@ -284,7 +281,7 @@ libra_error_t __librashader__noop_vk_filter_chain_set_active_pass_count(
 }
 
 libra_error_t __librashader__noop_vk_filter_chain_get_active_pass_count(
-    libra_vk_filter_chain_t *chain, uint32_t *out) {
+    const libra_vk_filter_chain_t *chain, uint32_t *out) {
     return NULL;
 }
 #endif
@@ -309,9 +306,9 @@ libra_error_t __librashader__noop_d3d11_filter_chain_create_deferred(
 
 libra_error_t __librashader__noop_d3d11_filter_chain_frame(
     libra_d3d11_filter_chain_t *chain, ID3D11DeviceContext *device_context,
-    size_t frame_count, struct libra_source_image_d3d11_t image,
-    struct libra_viewport_t viewport, ID3D11RenderTargetView *out,
-    const float *mvp, const struct frame_d3d11_opt_t *opt) {
+    size_t frame_count, ID3D11ShaderResourceView *image, ID3D11RenderTargetView *out,
+    const struct libra_viewport_t *viewport, const float *mvp,
+    const struct frame_d3d11_opt_t *opt) {
     return NULL;
 }
 
@@ -326,7 +323,7 @@ libra_error_t __librashader__noop_d3d11_filter_chain_set_param(
 }
 
 libra_error_t __librashader__noop_d3d11_filter_chain_get_param(
-    libra_d3d11_filter_chain_t *chain, const char *param_name, float *out) {
+    const libra_d3d11_filter_chain_t *chain, const char *param_name, float *out) {
     return NULL;
 }
 
@@ -336,7 +333,7 @@ libra_error_t __librashader__noop_d3d11_filter_chain_set_active_pass_count(
 }
 
 libra_error_t __librashader__noop_d3d11_filter_chain_get_active_pass_count(
-    libra_d3d11_filter_chain_t *chain, uint32_t *out) {
+    const libra_d3d11_filter_chain_t *chain, uint32_t *out) {
     return NULL;
 }
 #endif
@@ -361,9 +358,9 @@ libra_error_t __librashader__noop_d3d12_filter_chain_create_deferred(
 
 libra_error_t __librashader__noop_d3d12_filter_chain_frame(
     libra_d3d12_filter_chain_t *chain, ID3D12GraphicsCommandList *command_list,
-    size_t frame_count, struct libra_source_image_d3d12_t image,
-    struct libra_viewport_t viewport, struct libra_output_image_d3d12_t out,
-    const float *mvp, const struct frame_d3d12_opt_t *opt) {
+    size_t frame_count, struct libra_image_d3d12_t image, struct libra_image_d3d12_t out,
+    const struct libra_viewport_t *viewport, const float *mvp,
+    const struct frame_d3d12_opt_t *opt) {
     return NULL;
 }
 
@@ -378,7 +375,7 @@ libra_error_t __librashader__noop_d3d12_filter_chain_set_param(
 }
 
 libra_error_t __librashader__noop_d3d12_filter_chain_get_param(
-    libra_d3d12_filter_chain_t *chain, const char *param_name, float *out) {
+    const libra_d3d12_filter_chain_t *chain, const char *param_name, float *out) {
     return NULL;
 }
 
@@ -388,7 +385,7 @@ libra_error_t __librashader__noop_d3d12_filter_chain_set_active_pass_count(
 }
 
 libra_error_t __librashader__noop_d3d12_filter_chain_get_active_pass_count(
-    libra_d3d12_filter_chain_t *chain, uint32_t *out) {
+    const libra_d3d12_filter_chain_t *chain, uint32_t *out) {
     return NULL;
 }
 #endif
@@ -404,8 +401,8 @@ libra_error_t __librashader__noop_d3d9_filter_chain_create(
 
 libra_error_t __librashader__noop_d3d9_filter_chain_frame(
     libra_d3d9_filter_chain_t *chain, size_t frame_count,
-    IDirect3DTexture9 *image, struct libra_viewport_t viewport,
-    IDirect3DSurface9 * out, const float *mvp,
+    IDirect3DTexture9 *image, IDirect3DSurface9 * out,
+    const struct libra_viewport_t *viewport, const float *mvp,
     const struct frame_d3d9_opt_t *opt) {
     return NULL;
 }
@@ -421,7 +418,7 @@ libra_error_t __librashader__noop_d3d9_filter_chain_set_param(
 }
 
 libra_error_t __librashader__noop_d3d9_filter_chain_get_param(
-    libra_d3d9_filter_chain_t *chain, const char *param_name, float *out) {
+    const libra_d3d9_filter_chain_t *chain, const char *param_name, float *out) {
     return NULL;
 }
 
@@ -431,7 +428,7 @@ libra_error_t __librashader__noop_d3d9_filter_chain_set_active_pass_count(
 }
 
 libra_error_t __librashader__noop_d3d9_filter_chain_get_active_pass_count(
-    libra_d3d9_filter_chain_t *chain, uint32_t *out) {
+    const libra_d3d9_filter_chain_t *chain, uint32_t *out) {
     return NULL;
 }
 #endif
@@ -456,8 +453,8 @@ libra_error_t __librashader__noop_mtl_filter_chain_create_deferred(
 
 libra_error_t __librashader__noop_mtl_filter_chain_frame(
     libra_mtl_filter_chain_t *chain, id<MTLCommandBuffer> command_buffer,
-    size_t frame_count, id<MTLTexture> image, struct libra_viewport_t viewport,
-    id<MTLTexture> output, const float *mvp,
+    size_t frame_count, id<MTLTexture> image, id<MTLTexture> output,
+    const struct libra_viewport_t *viewport, const float *mvp,
     const struct frame_mtl_opt_t *opt) {
     return NULL;
 }
@@ -473,7 +470,7 @@ libra_error_t __librashader__noop_mtl_filter_chain_set_param(
 }
 
 libra_error_t __librashader__noop_mtl_filter_chain_get_param(
-    libra_mtl_filter_chain_t *chain, const char *param_name, float *out) {
+    const libra_mtl_filter_chain_t *chain, const char *param_name, float *out) {
     return NULL;
 }
 
@@ -483,7 +480,7 @@ libra_error_t __librashader__noop_mtl_filter_chain_set_active_pass_count(
 }
 
 libra_error_t __librashader__noop_mtl_filter_chain_get_active_pass_count(
-    libra_mtl_filter_chain_t *chain, uint32_t *out) {
+    const libra_mtl_filter_chain_t *chain, uint32_t *out) {
     return NULL;
 }
 #endif
@@ -573,6 +570,8 @@ typedef struct libra_instance_t {
     /// - GLCore
     /// - Direct3D11
     /// - Direct3D12
+    /// - Metal
+    /// - Direct3D9 (HLSL)
     ///
     /// This will also set the appropriate video driver extensions.
     ///
@@ -799,17 +798,6 @@ typedef struct libra_instance_t {
     PFN_libra_error_free_string error_free_string;
 
 #if defined(LIBRA_RUNTIME_OPENGL)
-    /// Initialize the OpenGL Context for librashader.
-    ///
-    /// ## Safety
-    /// Attempting to create a filter chain will fail if the context is not
-    /// initialized.
-    ///
-    /// Reinitializing the OpenGL context with a different loader immediately
-    /// invalidates previous filter chain objects, and drawing with them causes
-    /// immediate undefined behaviour.
-    PFN_libra_gl_init_context gl_init_context;
-
     /// Create the filter chain given the shader preset.
     ///
     /// The shader preset is immediately invalidated and must be recreated after
@@ -1334,7 +1322,7 @@ typedef struct libra_instance_t {
     ///    struct.
     PFN_libra_mtl_filter_chain_frame mtl_filter_chain_frame;
 
-    /// Free a D3D11 filter chain.
+    /// Free a Metal filter chain.
     ///
     /// The resulting value in `chain` then becomes null.
     /// ## Safety
@@ -1445,7 +1433,6 @@ libra_instance_t __librashader_make_null_instance(void) {
     instance.error_free_string = __librashader__noop_error_free_string;
 
 #if defined(LIBRA_RUNTIME_OPENGL)
-    instance.gl_init_context = __librashader__noop_gl_init_context;
     instance.gl_filter_chain_create =
         __librashader__noop_gl_filter_chain_create;
     instance.gl_filter_chain_frame = __librashader__noop_gl_filter_chain_frame;
@@ -1620,7 +1607,6 @@ libra_instance_t librashader_load_instance(void) {
     _LIBRASHADER_ASSIGN(librashader, instance, error_free_string);
 
 #if defined(LIBRA_RUNTIME_OPENGL)
-    _LIBRASHADER_ASSIGN(librashader, instance, gl_init_context);
     _LIBRASHADER_ASSIGN(librashader, instance, gl_filter_chain_create);
     _LIBRASHADER_ASSIGN(librashader, instance, gl_filter_chain_frame);
     _LIBRASHADER_ASSIGN(librashader, instance, gl_filter_chain_free);

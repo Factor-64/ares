@@ -24,7 +24,7 @@ auto OpenGL::setShader(const string& pathname) -> void {
       return;
     }
 
-    if(auto error = _libra.gl_filter_chain_create(&_preset, NULL, &_chain)) {
+    if(auto error = _libra.gl_filter_chain_create(&_preset, resolveSymbol, NULL, &_chain)) {
       print(string{"OpenGL: Failed to create filter chain for: ", pathname, "\n"});
       _libra.error_print(error);
       setShader("");
@@ -127,14 +127,12 @@ auto OpenGL::initialize(const string& shader) -> bool {
     print("OpenGL: Failed to load librashader: shaders will be disabled\n");
   }
 
-  if(_libra.gl_init_context(resolveSymbol) != NULL) {
-    print("OpenGL: Failed to initialize librashader context: shaders will be disabled\n");
-  };
-
   setShader(shader);
   return initialized = true;
 }
 
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
 auto OpenGL::resolveSymbol(const char* name) -> const void * {
 #if defined(PLATFORM_MACOS)
   NSSymbol symbol;
@@ -157,6 +155,7 @@ auto OpenGL::resolveSymbol(const char* name) -> const void * {
     }
   #endif
 #endif
+#pragma clang diagnostic pop
 
   return symbol;
 }

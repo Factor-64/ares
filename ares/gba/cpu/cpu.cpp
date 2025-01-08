@@ -30,8 +30,6 @@ auto CPU::unload() -> void {
 }
 
 auto CPU::main() -> void {
-  ARM7TDMI::irq = irq.synchronizer[0];
-
   if(stopped()) {
     if(!keypad.conditionMet) {
       stepIRQ();
@@ -45,6 +43,7 @@ auto CPU::main() -> void {
   }
 
   if(halted()) {
+    dmaRun();
     if(!(irq.enable[0] & irq.flag[0])) {
       return step(4);
     }
@@ -57,7 +56,7 @@ auto CPU::main() -> void {
 }
 
 auto CPU::dmaRun() -> void {
-  if(!context.dmaActive && !context.prefetchActive) {
+  if(!context.dmaActive && !context.busLocked) {
     context.dmaActive = true;
     while(dma[0].run() | dma[1].run() | dma[2].run() | dma[3].run());
     if(context.dmaRan) {
@@ -74,16 +73,14 @@ auto CPU::setInterruptFlag(u32 source) -> void {
 }
 
 inline auto CPU::stepIRQ() -> void {
-  irq.synchronizer[0] = irq.synchronizer[1];
-  irq.synchronizer[1] = irq.ime && (irq.enable[0] & irq.flag[0]);
+  irq.synchronizer = irq.ime[0] && (irq.enable[0] & irq.flag[0]);
   irq.enable[0] = irq.enable[1];
   irq.flag[0] = irq.flag[1];
+  irq.ime[0] = irq.ime[1];
 }
 
 auto CPU::step(u32 clocks) -> void {
   if(!clocks) return;
-
-  dmaRun();
 
   dma[0].waiting = max(0, dma[0].waiting - (s32)clocks);
   dma[1].waiting = max(0, dma[1].waiting - (s32)clocks);
@@ -110,17 +107,16 @@ auto CPU::step(u32 clocks) -> void {
     context.clock++;
   }
 
-  #if defined(PROFILE_PERFORMANCE)
-  //10-20% speedup by only synchronizing other components every 16 clock cycles
+  Thread::step(clocks);
+  Thread::synchronize(display, player);
+
+  //occasionally synchronize with PPU and APU in case CPU has not recently interacted with them
   static u32 counter = 0;
   counter += clocks;
-  if(counter < 16) return;
-  clocks = counter;
-  counter = 0;
-  #endif
-
-  Thread::step(clocks);
-  Thread::synchronize();
+  if(counter >= 1024) {
+    Thread::synchronize(ppu, apu);
+    counter = 0;
+  }
 }
 
 auto CPU::power() -> void {

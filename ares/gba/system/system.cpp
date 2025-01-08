@@ -14,6 +14,13 @@ auto load(Node::System& node, string name) -> bool {
   return system.load(node, name);
 }
 
+auto option(string name, string value) -> bool {
+  if(name == "Pixel Accuracy") {
+    ppu.setAccurate(value.boolean());
+  }
+  return true;
+}
+
 Scheduler scheduler;
 BIOS bios;
 System system;
@@ -64,6 +71,7 @@ auto System::load(Node::System& root, string name) -> bool {
   cpu.load(node);
   ppu.load(node);
   apu.load(node);
+  display.load(node);
   cartridgeSlot.load(node);
   return true;
 }
@@ -80,6 +88,7 @@ auto System::unload() -> void {
   cpu.unload();
   ppu.unload();
   apu.unload();
+  display.unload();
   cartridgeSlot.unload();
   pak.reset();
   node.reset();
@@ -93,6 +102,7 @@ auto System::power(bool reset) -> void {
   cpu.power();
   ppu.power();
   apu.power();
+  display.power();
   cartridge.power();
   scheduler.power(cpu);
 }

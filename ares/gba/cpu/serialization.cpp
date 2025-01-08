@@ -52,7 +52,8 @@ auto CPU::serialize(serializer& s) -> void {
   s(serial.transferEnableReceive);
   s(serial.transferEnableSend);
   s(serial.startBit);
-  s(serial.transferLength);
+  s(serial.uartFlags);
+  s(serial.mode);
   s(serial.irqEnable);
   for(auto& value : serial.data) s(value);
   s(serial.data8);
@@ -82,8 +83,8 @@ auto CPU::serialize(serializer& s) -> void {
   s(joybus.sendFlag);
   s(joybus.generalFlag);
 
-  s(irq.ime);
-  for(auto& flag : irq.synchronizer) s(flag);
+  for(auto& flag : irq.ime) s(flag);
+  s(irq.synchronizer);
   for(auto& flag : irq.enable) s(flag);
   for(auto& flag : irq.flag) s(flag);
 
@@ -99,10 +100,14 @@ auto CPU::serialize(serializer& s) -> void {
   s(memory.ewramWait);
   s(memory.unknown2);
 
+  s(openBus.data);
+  s(openBus.iwramData);
+
   s(prefetch.slot);
   s(prefetch.addr);
   s(prefetch.load);
   s(prefetch.wait);
+  s(prefetch.stopped);
 
   s(context.clock);
   s(context.halted);
@@ -111,6 +116,6 @@ auto CPU::serialize(serializer& s) -> void {
   s(context.dmaRan);
   s(context.dmaRomAccess);
   s(context.dmaActive);
-  s(context.prefetchActive);
   s(context.timerLatched);
+  s(context.busLocked);
 }

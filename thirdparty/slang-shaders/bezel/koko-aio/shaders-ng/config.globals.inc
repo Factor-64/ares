@@ -1,5 +1,8 @@
 //Wrap any translation into an ifndef so that we can override them with a static include.
 
+#ifndef DO_TEST
+    #define DO_TEST	global.DO_TEST
+#endif
 
 #ifndef DO_CCORRECTION
     #define DO_CCORRECTION	global.DO_CCORRECTION
@@ -121,12 +124,28 @@
     #define DO_RF_NOISE		global.DO_RF_NOISE
 #endif
 
+#ifndef RF_NOISE_SPARK
+    #define RF_NOISE_SPARK		global.RF_NOISE_SPARK
+#endif
+
 #ifndef RF_NOISE_STRENGTH
     #define RF_NOISE_STRENGTH	global.RF_NOISE_STRENGTH
 #endif
 
 #ifndef DO_SAT_BLEED
     #define DO_SAT_BLEED		global.DO_SAT_BLEED
+#endif
+
+#ifndef DOT_C
+    #define DOT_C		global.DOT_C
+#endif
+
+#ifndef DOT_C_YIQ
+    #define DOT_C_YUV		global.DOT_C_YUV
+#endif
+
+#ifndef DOT_C_SPEED
+    #define DOT_C_SPEED		global.DOT_C_SPEED
 #endif
 
 #ifndef SAT_BLEED_SIZE
@@ -149,16 +168,40 @@
     #define DO_SHIFT_RGB		global.DO_SHIFT_RGB
 #endif
 
-#ifndef SHIFT_R
-    #define SHIFT_R			global.SHIFT_R
+#ifndef DECON_RX
+    #define DECON_RX			global.DECON_RX
 #endif
 
-#ifndef SHIFT_G
-    #define SHIFT_G			global.SHIFT_G
+#ifndef DECON_RY
+    #define DECON_RY			global.DECON_RY
 #endif
 
-#ifndef SHIFT_B
-    #define SHIFT_B			global.SHIFT_B
+#ifndef DECON_GX
+    #define DECON_GX			global.DECON_GX
+#endif
+
+#ifndef DECON_GY
+    #define DECON_GY			global.DECON_GY
+#endif
+
+#ifndef DECON_BX
+    #define DECON_BX			global.DECON_BX
+#endif
+
+#ifndef DECON_BY
+    #define DECON_BY			global.DECON_BY
+#endif
+
+#ifndef EDGE_DEFOCUS
+    #define EDGE_DEFOCUS		global.EDGE_DEFOCUS
+#endif
+
+#ifndef EDGE_DEFOCUS_AREA_INV
+    #define EDGE_DEFOCUS_AREA_INV		global.EDGE_DEFOCUS_AREA_INV
+#endif
+
+#ifndef EDGE_DEFOCUS_DO_BLUR
+    #define EDGE_DEFOCUS_DO_BLUR		global.EDGE_DEFOCUS_DO_BLUR
 #endif
 
 #ifndef OFFSET_STRENGTH
@@ -190,6 +233,18 @@
     #define IN_GLOW_H				global.IN_GLOW_H
 #endif
 
+#ifndef	IN_GLOW_WARPSHARP_X
+	#define IN_GLOW_WARPSHARP_X global.IN_GLOW_WARPSHARP_X
+#endif
+
+#ifndef	IN_GLOW_WARPSHARP_Y
+	#define IN_GLOW_WARPSHARP_Y global.IN_GLOW_WARPSHARP_Y
+#endif
+
+#ifndef	IN_GLOW_WARPSHARP_GAMMA
+	#define IN_GLOW_WARPSHARP_GAMMA global.IN_GLOW_WARPSHARP_GAMMA
+#endif
+
 #ifndef IN_GLOW_POWER
     #define IN_GLOW_POWER			global.IN_GLOW_POWER
 #endif
@@ -212,6 +267,10 @@
 
 #ifndef DO_HALO
     #define DO_HALO		global.DO_HALO
+#endif
+
+#ifndef HALO_DO_MASK_HELPER
+    #define HALO_DO_MASK_HELPER		params.HALO_DO_MASK_HELPER
 #endif
 
 #ifndef HALO_SHARPNESS
@@ -320,10 +379,6 @@
 
 #ifndef BEZEL_CON
     #define BEZEL_CON		global.BEZEL_CON
-#endif
-
-#ifndef BEZEL_INNER_ZOOM
-    #define BEZEL_INNER_ZOOM	global.BEZEL_INNER_ZOOM
 #endif
 
 #ifndef BEZEL_FRAME_ZOOM
@@ -656,10 +711,6 @@
     #define DOT_M_MBLUR_MODE	global.DOT_M_MBLUR_MODE
 #endif
 
-#ifndef DOT_M_MULTIPLY
-    #define DOT_M_MULTIPLY  	global.DOT_M_MULTIPLY
-#endif
-
 #ifndef DOT_M_SHADOW_STR
     #define DOT_M_SHADOW_STR	global.DOT_M_SHADOW_STR
 #endif
@@ -698,10 +749,6 @@
 
 #ifndef PIXELGRID_DOUBLESCAN
     #define PIXELGRID_DOUBLESCAN 	global.PIXELGRID_DOUBLESCAN
-#endif
-
-#ifndef	PIXELGRID_INFLATION
-	#define PIXELGRID_INFLATION global.PIXELGRID_INFLATION
 #endif
 
 #ifndef PIXELGRID_MIN_H
@@ -834,6 +881,10 @@
 
 #ifndef PIXELGRID_INTR_DISABLE_Y
     #define PIXELGRID_INTR_DISABLE_Y  global.PIXELGRID_INTR_DISABLE_Y
+#endif
+
+#ifndef PIXELGRID_INTR_GAMMA_ADJ
+    #define PIXELGRID_INTR_GAMMA_ADJ global.PIXELGRID_INTR_GAMMA_ADJ
 #endif
 
 #ifndef PIXELGRID_GAMMA_W

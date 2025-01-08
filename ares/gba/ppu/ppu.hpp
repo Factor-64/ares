@@ -7,6 +7,8 @@ struct PPU : Thread, IO {
   Memory::Writable<n8 > vram;  //96KB
   Memory::Writable<n16> pram;
 
+  bool accurate;
+
   struct Debugger {
     //debugger.cpp
     auto load(Node::Object) -> void;
@@ -27,12 +29,19 @@ struct PPU : Thread, IO {
   } debugger;
 
   //ppu.cpp
+  auto setAccurate(bool value) -> void;
+
   auto load(Node::Object) -> void;
   auto unload() -> void;
 
   auto blank() -> bool;
 
   auto step(u32 clocks) -> void;
+  template<u32> auto cycleLinear(u32 x, u32 y) -> void;
+  template<u32> auto cycleAffine(u32 x, u32 y) -> void;
+  auto cycleBitmap(u32 x, u32 y) -> void;
+  auto cycleUpperLayer(u32 x, u32 y) -> void;
+  template<u32> auto cycle(u32 y) -> void;
   auto main() -> void;
 
   auto frame() -> void;
@@ -72,22 +81,15 @@ private:
     n1  gameBoyColorMode;
     n1  forceBlank[4];
     n1  greenSwap;
-
-    n1  vblank;
-    n1  hblank;
-    n1  vcoincidence;
-    n1  irqvblank;
-    n1  irqhblank;
-    n1  irqvcoincidence;
-    n8  vcompare;
-
-    n16 vcounter;
   } io;
 
   struct Pixel {
     n1  enable;
     n2  priority;
     n15 color;
+
+    //BG2 only
+    n1 directColor;
 
     //OBJ only
     n1  translucent;
@@ -99,9 +101,11 @@ private:
     //background.cpp
     auto setEnable(n1 status) -> void;
     auto scanline(u32 y) -> void;
+    auto outputPixel(u32 x, u32 y) -> void;
     auto run(u32 x, u32 y) -> void;
     auto linear(u32 x, u32 y) -> void;
-    auto affine(u32 x, u32 y) -> void;
+    auto affineFetchTileMap(u32 x, u32 y) -> void;
+    auto affineFetchTileData(u32 x, u32 y) -> void;
     auto bitmap(u32 x, u32 y) -> void;
     auto power(u32 id) -> void;
 
@@ -150,7 +154,17 @@ private:
       n4 palette;
     } latch;
 
-    Pixel output;
+    struct Affine {
+      u32 screenSize;
+      u32 screenWrap;
+      u32 cx;
+      u32 cy;
+      u32 tx;
+      u32 ty;
+      n8  character;
+    } affine;
+
+    Pixel output[240];
     Pixel mosaic;
     u32 mosaicOffset;
 
@@ -165,7 +179,7 @@ private:
     //object.cpp
     auto setEnable(n1 status) -> void;
     auto scanline(u32 y) -> void;
-    auto run(u32 x, u32 y) -> void;
+    auto outputPixel(u32 x, u32 y) -> void;
     auto power() -> void;
 
     //object.cpp
@@ -180,7 +194,7 @@ private:
       n5 mosaicHeight;
     } io;
 
-    Pixel buffer[240];
+    Pixel lineBuffers[2][240];
     Pixel output;
     Pixel mosaic;
     u32 mosaicOffset;
@@ -212,7 +226,10 @@ private:
 
   struct DAC {
     //dac.cpp
-    auto run(u32 x, u32 y) -> n15;
+    auto scanline(u32 y) -> void;
+    auto upperLayer(u32 x, u32 y) -> void;
+    auto lowerLayer(u32 x, u32 y) -> void;
+    auto pramLookup(Pixel& layer) -> n15;
     auto blend(n15 above, u32 eva, n15 below, u32 evb) -> n15;
     auto power() -> void;
 
@@ -228,6 +245,15 @@ private:
       n5 blendEVB;
       n5 blendEVY;
     } io;
+
+    u32 aboveLayer;
+    u32 belowLayer;
+    n15 color;
+    n1  blending;
+
+    Pixel layers[6];
+
+    u32* line = nullptr;
   } dac;
 
   struct Object {
@@ -266,8 +292,6 @@ private:
     i16 pc;
     i16 pd;
   } objectParam[32];
-  
-  n1 videoCapture = 0;
 };
 
 extern PPU ppu;

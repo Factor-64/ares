@@ -55,8 +55,9 @@ auto CPU::readIO(n32 address) -> n8 {
   | serial.startBit              << 7
   );
   case 0x0400'0129: return (
-    serial.transferLength << 4
-  | serial.irqEnable      << 6
+    serial.uartFlags << 0
+  | serial.mode      << 4
+  | serial.irqEnable << 6
   );
 
   //SIOMLT_SEND (SIODATA8)
@@ -211,7 +212,7 @@ auto CPU::readIO(n32 address) -> n8 {
   case 0x0400'0207: return 0;
 
   //IME
-  case 0x0400'0208: return irq.ime;
+  case 0x0400'0208: return irq.ime[0];
   case 0x0400'0209: return 0;
   
   //zero
@@ -243,7 +244,7 @@ auto CPU::readIO(n32 address) -> n8 {
 
   }
 
-  return cpu.pipeline.fetch.instruction.byte(address & 1);
+  return cpu.openBus.get(Byte, address);
 }
 
 auto CPU::writeIO(n32 address, n8 data) -> void {
@@ -339,8 +340,9 @@ auto CPU::writeIO(n32 address, n8 data) -> void {
     serial.startBit              = data.bit(7);
     return;
   case 0x0400'0129:
-    serial.transferLength = data.bit(4);
-    serial.irqEnable      = data.bit(6);
+    serial.uartFlags = data.bit(0,3);
+    serial.mode      = data.bit(4,5);
+    serial.irqEnable = data.bit(6);
     return;
 
   //SIOMLT_SEND (SIODATA8)
@@ -383,10 +385,10 @@ auto CPU::writeIO(n32 address, n8 data) -> void {
 
   //JOYCNT
   case 0x0400'0140:
-    joybus.resetSignal     = data.bit(0);
-    joybus.receiveComplete = data.bit(1);
-    joybus.sendComplete    = data.bit(2);
-    joybus.resetIRQEnable  = data.bit(6);
+    joybus.resetSignal     &= ~data.bit(0);
+    joybus.receiveComplete &= ~data.bit(1);
+    joybus.sendComplete    &= ~data.bit(2);
+    joybus.resetIRQEnable   =  data.bit(6);
     return;
   case 0x0400'0141: return;
   case 0x0400'0142: return;
@@ -440,7 +442,7 @@ auto CPU::writeIO(n32 address, n8 data) -> void {
     return;
 
   //IME
-  case 0x0400'0208: irq.ime = data.bit(0); return;
+  case 0x0400'0208: irq.ime[1] = data.bit(0); return;
   case 0x0400'0209: return;
 
   //POSTFLG, HALTCNT

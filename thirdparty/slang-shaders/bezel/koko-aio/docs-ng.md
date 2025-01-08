@@ -1,10 +1,20 @@
-**koko-aio-slang documentation**
+**-KOKO-AIO DOCUMENTAION-**
+---------------------------
+---------------------------
 
-**RETROARCH OUTPUT DRIVERS**
-    koko-aio does not work by on d3d12 and glitches on d3d11.<br>
-    If you absolutely need it (Xbox?), you can edit the file 
-    config\config-static.inc<br>
-    and turn the line:
+**REQUIREMENTS** <br>
+    koko-aio needs at least retroarch 1.16 <br>
+    Also it expects the following options set in Retroarch:
+    
+    Settings -> Core -> Allow Rotation: ON
+    Settings -> Video -> Scaling -> Aspect Ratio: Full
+    
+
+**RETROARCH OUTPUT DRIVERS** <br>
+    koko-aio does not work by default on d3d12 and d3d11.<br>
+    If you absolutely need it (Xbox?), you can edit the file <br>
+    config\config-static.inc <br>
+    and turn the line: <br>
     // #define D3D_WORKAROUND <br>
     into:<br>
     #define D3D_WORKAROUND <br>
@@ -14,7 +24,18 @@
     <br>
     d3d10 is completely unsupported.
     <br>
-
+    Be warned that the following functions do not work if you enable the workaround: <br>
+        * CRT glitch on resolution changes <br>
+        * Adaptive Black <br>
+        * CVBS Bleed size is limited to 5.0 <br>
+        * Ambientlight scene change detection <br>
+        * Halving border updates refresh <br>
+        * Lcd antighosting <br>
+        * Delta render <br>
+        * Possibly others (?) <br>
+    
+---------------------------
+    
 **USEFUL LOCATIONS/FILES:**
 
     config/config-static.inc:
@@ -29,21 +50,39 @@
         CON: The parameters can no longer be modified within Retroarch. 
         
     textures/background_under.png
-        This is the image that can is shown by default under the main content and under the bezel.
+        This is the image that shown by default under the main content and under the bezel.
         Read further for details. 
         
     textures/background_over.png
-        This is the image that can is shown by default over the main content and under the bezel.
+        This is the image that shown by default over the main content and under the bezel.
         Read further for details.
         
     textures/monitor_body_curved.png, textures/monitor_body_straight.png
         This is the image used to draw the bezel.
-        Read further for details.
+        Read further in the bezel section of this document for details.
         
-Texture "sources", including the main gimp project file for the default curved and straight monitor frame
-are on the following repo:
+    textures/side_shade-helper.png
+        Bezel frame inner area, the reflective part, is shaded by default so that
+        upper area is less bright and lower area is a bit brighter.
+        While the shader does not expose controls to change that, if you want,
+        you can edit this file to alter the shades.
+        The more a primary color is saturated, the more the shade will turn to dark.
+        
+        
+Texture "sources", including the main gimp project file for the <br>
+default curved and straight monitor frame are on the following repo: <br>
 https://github.com/kokoko3k/koko-aio-slang-misc/tree/main
 
+
+---------------------------
+
+**PARAMETERS:**
+
+**Gamma in:**
+        Input Gamma: set it around 2.2 to linearize values.
+        
+**Gamma out:**
+        Output Gamma: set it around "1/Gamma in"; small tweaks allowed.
         
 **Color corrections:**<br>
     Modify signal color at "input" stage.<br>
@@ -52,10 +91,6 @@ https://github.com/kokoko3k/koko-aio-slang-misc/tree/main
         self explanatory.
     Input signal gain:
         Gain applied in the chain just before the crt emulation stages.
-    Gamma in:
-        Gamma correction applied at the beginning of the chain.
-    Gamma out:
-        Gamma correction applied to the final processed picture.
     Adaptive black level range:
         On old CRTs the contrast was higher on high luminosity content,
         and lower on low luminosity content.
@@ -66,17 +101,20 @@ https://github.com/kokoko3k/koko-aio-slang-misc/tree/main
         Monochrome screen colorization:
             The amount of (de) colorization applied.
         Hue bright, Hue dark:
-            Set the hue for bright and dark colors.
+            Set the hue for bright and dark colors. in [0..1] range.
+            To emulate different monochrome models, the process is quite easy:
+            . Provided you have screenshots, use a color picker tool with hue expressed in 1…360
+              range and identify the hue of the original naked background hue1
+            . Do the same for the darkest pixel on the screen, hue2
+            . Then report them in the shader with the formula hue1/360 and hue2/360.
         Hue bright-dark bias:
             Controls the distribution of dark and bright hues.
     
-**FXAA:**<br>
-    Apply the well known antialiasing effect by Nvidia.<br>
+**Antialiasing enable:**<br>
+    Apply an edge smoothing/antialiasing algotithm.<br>
     Use it if you don't want to blur the image and you still don't like<br>
     jagged or too much pixelated images.<br>
 
-** RF Noise:**<br>
-    Emulates radio frequency noise with a given strength<br>
 
 ** Dedither:**<br>
     Try to smooth dithering patterns.<br>
@@ -102,9 +140,10 @@ https://github.com/kokoko3k/koko-aio-slang-misc/tree/main
 
     Consider artifacts above this treshold:
         Tune this to select more or less artifacts, depending on their strength.
-    Show the mask of selected artifacts (debug)
+    Show selected artifacts mask (need glow/blur enabled)
         This will show only the part of the image that contains artifacts.
-        Use it to for a better visual feedback of the following parameters
+        Use it to for a better visual feedback of the following parameters.
+        Please, enable "glow" to s
 
     1* Under treshold: Cancel blur (Glow)
         How much the glow/blur function will skip blurring "unartifacted" areas.
@@ -120,23 +159,46 @@ https://github.com/kokoko3k/koko-aio-slang-misc/tree/main
     It can be used with RGB shifting and image blurring to give the picture<br>
     an ntsc look without dealing with specific encoding/decoding stuffs. <br>
 
+**CVBS: Dot crawl**<br>
+    Emulates rolling chroma->luma crosstalks observed in composite signals.<br>
+    You can switch between pal and ntsc.<br>
+    
 **Persistence of phosphors:**<br>
     This emulates the unexcited phosphors that continue to emit light.
 
     Early decay: is the immediate light cut after the phosphor is no more/less excited.
     Late persistence: modulates the time the residual light will stay on screen
-    
-    
+
+
 **Deconvergence:**<br>
     Shift R,G,B components separately to mimic channel deconvergence.<br>
-    By varying Red, Green and Blue offsets, the relative component will be<br>
-    shifted column by column, row by row.<br>
     
+    Red,Green,Blue X,Y:
+        The channels deconvergence offsets
+    Deconvergence increases near edges:
+        Increase the offsets near screen edge
+    Blur increases near edges when glow/blur is enabled:
+        When using Glow/Blur feature, the blur increases near screen edge.
+    Focused Area:
+        The area of the screen that will be in focus (affects previous 2 settings)
+
+        
+** RF Noise:**<br>
+    Emulates radio frequency noise with a given strength<br>
+    1 produce noise after the Glow/Blur pass, while -1 will move it before it.
+    Suggestions:
+    If you're blurring the image, is better to use 1.<br>
+    If you're glowing the image, prefer -1.<br>
+    
+    Uniform noise: Balanced noise that ranges from -x to +x.
+    Snow noise: Sparkling/Rarefied noise 
+        
+        
 **Glow/Blur:**<br>
     Emulate the CRT glowing "feature", so that the brighter areas of<br>
     the image will light their surroundings,<br>
     with options to switch to classic blur.<br>
-    
+
     Glow to blur bias:
         Higher negative values -> more glow : brighter colors expands over darker ones.
         Higher positive values -> means blur: all the colors are blurred.
@@ -145,13 +207,24 @@ https://github.com/kokoko3k/koko-aio-slang-misc/tree/main
         The higher, the more the bright colors will smoothly expand.
         It emulates the natural antialiasing you see on CRTs on bright areas.
         More pronunced as "Glow to blur bias" approaches 0.
-        
+
     Sharpness (horizontal, vertical):
         Modulates the sharpness of the image.
         - Max (actually 7.0) will not alter the image sharpness.
         - More than 0: will use gauss blur
         - Less than 0: will use box blur and will progressively
           add visual sharpness to image when approaching lower values.
+
+    Warped glow (X,Y):
+        Embolden bright pixels near dark ones using a warpsharp like algorithm.
+        This is a cheap way to emulate phosphor glowing.
+        The Y parameter will also allow scanlines to be higher.
+        It will also help (if coupled with) antialiasing to stay sharp.
+
+    Warped Dynamics:
+        Change the amount of warpsharp applied based on the contrast between 
+        nearby pixels, thereby altering their "Warped" shape.
+
 
 **Tate mode:**<br>
     Rotates mask and scanlines by 90°<br>
@@ -171,12 +244,21 @@ https://github.com/kokoko3k/koko-aio-slang-misc/tree/main
         With values > 1.0, it will consider a frame as Hi-resolution if the lines number is above the configured value.
 
     Hi-Res scanlines type
-      -1: Use a number of scanlines that perfectly fits the screen, a good glitches/moire free tradeoff.
-      -2: As above, but tighter (~1.5x), another good glitches/moire free tradeoff.
-       0: Use interlaced scanlines, may need >1080p screen to avoid moire or weavy glitches
-       1: Avoid drawing scanlines gaps at all.
-       2: Use scanlines, but don't interlace them (bad for 1080p and lower resolutions)
-
+       -1: Use a number of scanlines that perfectly fits the screen, a good glitches/moire free tradeoff.
+       -2: As above, but tighter (~1.5x), another good glitches/moire free tradeoff.
+        0: Use interlaced scanlines, may need >1080p screen to avoid moire or weavy glitches
+        1: Avoid drawing scanlines gaps at all.
+        2: Use scanlines, but don't interlace them (bad for 1080p and low resolutions)
+        
+    Interlaced brighness push
+        When emulating interlaced scanlines (see above modes: -1, -2, 0),
+        the resulting brightness is usually diminished.
+        This is due to the latency some panels have when changing open/close state.
+        *Lowering* this parameter compensates that and usually
+        Values around 0.8 to 0.95 usually work good, for affected monitors.
+        On low latency panels such as OLEDs, microleds, this is not an issue,
+        so you should keep it to 1.0, possibly locking its value too in config-user.txt
+         
     Scanlines flicker (0=off,1=on,2=if Hi-res):
         This setting emulates the flickering issues present on crt interlaced screens
         where the brighter lines flickers when they are near dark ones.
@@ -213,8 +295,6 @@ https://github.com/kokoko3k/koko-aio-slang-misc/tree/main
               The decision will be based on the ratio of output dimensions and the core.
         Phosphors height Min, Max:
             Try to keep scanline height between those values, depending on content brightness.
-        Inflation Strength:
-            Scanlines appear as inflated depending on the pixel brightness.
         Phosphors width min->max gamma:
             Since emulating phosphors with high Min-Max range changes the apparent gamma of the final image,
             it is advised, if needed, to use this option to compensate, instead of the main gamma correction.
@@ -383,31 +463,47 @@ https://github.com/kokoko3k/koko-aio-slang-misc/tree/main
     So you can use this to restore the brightness and color saturation<br>
     loss when using features like scanlines, darklines or RGB masks.<br>
     
-    Pre-attenuate input signal gain to 1x:
+    (Halo): Pre-attenuate input signal gain to 1x:
         Nullifies the input gain applied in the color correction section.
         This way the halo effect will be consistent and will not depend on 
         it, avoiding hard to manage cascading effects.
-    Strength (negative = 10x precision)
+    (Halo): Strength (negative = 10x precision)
         The effect strength.
         Negative values are interpreted as positive ones, divided by 10,
         when fine tuning is needed.
-    Sharpness
+    (Halo): Sharpness
         The lower, the wider the halo.
-    Gamma in
+    (Halo): Gamma in
         Act like a soft treshold; the higher, the less the darker colors
         will be "haloed"
-    Gamma out
+    (Halo): Gamma out
         Post-gamma correction applied to the halo.
+    Mask Helper: Additional brighness if horizontal mask clips
+        This function will add more color to the subpixel mask (eg: RGB, RBGX...)
+        when it is unable to reach the enough brightness.
+        This will allow to fully exploit subpixel mask capacity while retaining
+        the desidered brightness.
+        Please note that a well calibrated monitor is needed.
+        
+        How to Use Mask Helper:
+        -----------------------
+            Adjust "Input signal gain" based on mask size:
+               ~2.0..3.0 for 2-sized (gm, wx)
+               ~3.0..4.0 for 3-sized (gmx, rgb,rbg)
+               ~4.0..5.0 for 4-sized (rgbx, rbgx)
+                
+            Activate the "Horizontal mask" parameter.
+               Set "Phosphors width Min, Max" to the minimum.
+               Set "Phosphors width min->max gamma" to the maximum.
+               
     Light up scanline gaps and dot grid gaps too:
-		Theoretically Halo have to be applied 
-		"over" everything, because that is the way it works in nature.
-		But you can choose to cheat and instead apply scanlines over the halo
-		instead.
-		Do this if you like much more pronunced scanlines, even at the
-		price of some graphical artifacts visible on high contrasted areas.
-		The same apply for the grid emulated via dot matrix emulation feature.
+        Theoretically Halo has to be applied
+        "over" everything, because that is the way it works in nature.
+        But you can choose to cheat and prefer to see more scanlines gaps, instead.
+        Do this if you like much more pronunced scanlines, even at the
+        cost of some graphical artifacts visible on high contrasted areas.
+        The same apply for the grid emulated via dot matrix emulation feature.
  
-    
 **Bloom:**<br>
     Acts like Halo, but affects a much wider area and is more configurable.<br>
     By using this effect and playing with its parameters, you can achieve funny<br>
@@ -454,33 +550,29 @@ https://github.com/kokoko3k/koko-aio-slang-misc/tree/main
 **Bezel:**<br>
     Draws a monitor frame with simulated reflections from the game content.<br>
     The monitor frame is an image loaded by the shader and is shipped<br>
-    in the "textures" shader subdirectory, named:
-    monitor_body_curved.png and monitor_body_straight.png
-    It has been made with the following rules that may come handy<br>
-    only if you want to edit it; otherwise go on.<br>
-    - The red channel represents the luminance information<br>
-    - The green channel represents the highlights<br>
-    - The alpha channel in the inner frame represents the part of the bezel<br>
-      that will be filled by the game content<br>
-    - The blue channel represents the part of the bezel that will be filled by the game reflection.<br>
+    in the "textures" shader subdirectory, named:<br>
+    monitor_body_curved.png and monitor_body_straight.png<br>
+    It has been made with the following rules that may come handy
+    only if you want to edit it; otherwise go on:<br>
+    * The red channel represents the luminance information<br>
+    * The green channel represents the highlights<br>
+    * The alpha channel in the inner frame represents the part of the bezel that will be filled by the game content<br>
+    * The blue channel represents the part of the bezel that will be filled by the game reflection.<br>
     
     Straight
         Use a straight bezel instead of a curved one.
-    Inner zoom:
-        Allows to shrink or expand the game content to fit the monitor frame.
-        "Fitting the monitor frame" is the ONLY scope of this option.
-        To have a smaller or larger than bezel screen, please use "Override content geometry"
-        options, or the reflections on the bezel will be misaligned.p
-
-    Frame zoom:
-          Allows to shrink or expand the monitor frame to fit the game content.
+    Frame alignment:
+        Allows to shrink or expand the monitor frame to fit game content and align reflections.
+        "Aligning the reflections" is the ONLY scope of this option.
     Bezel color (red,green,blue) and contrast:
         Allows to choose the color of the monitor frame.
     Reflections strength
         The amount of reflections
+    Less reflections in corners
+        Show less reflections in corners
     Reflections sharpness
         Modulates from totally blurred to totally sharp reflection appearance.
-    Reflections roughness
+    Surface roughness
         The amount of material roughness in reflection area
     Diffusion strength
         Mix an amount of high blurred reflection to simulate light diffusion
@@ -488,10 +580,11 @@ https://github.com/kokoko3k/koko-aio-slang-misc/tree/main
         Modulates the reflected and diffused light fadeout. higher numbers -> no fadeout.
     Specularity strength
         The amount of specular reflection
-    Darken corners
-        How much the bezel corners should be darkened
-    
 
+    
+**Global shift/zoom:**<br>
+    Zoom and shift everything on screen, but background pictures.<br>
+    
 **Backgound image:**<br>
     Draws an image on screen picked from the "textures" shader subdirectory,<br>
     named by default background_over.png and background_under.png<br>
@@ -596,10 +689,13 @@ https://github.com/kokoko3k/koko-aio-slang-misc/tree/main
 **Spot:**<br>
     Simulates external light reflected by the monitor glass.<br>
             
-**Aspect Ratio:**<br>
-    When using effects that need Retroarch aspect ratio option<br>
-    to be set to "full", you have to provide the source aspect<br>
-    ratio to the shader.<br>
+**Aspect (active with ambient light or background image only):**<br>
+    If you set retroarch aspect ratio option to full, you have to provide<br>
+    the core aspect ratio to the shader manually via the following parameters.<br>
+    NOTE: The following parameters are ignored when not using ambient lights
+    or background/foreground images.
+    In those cases, use options under "Override content geometry" section.
+    
     Use -6 for MAME cores that pre-rotates the game (TATE mode)<br>
     With Mame 2003 plus and fbneo cores, koko-aio detects if the<br>
     game is rotated or not without any user intervention.<br>
@@ -617,9 +713,6 @@ https://github.com/kokoko3k/koko-aio-slang-misc/tree/main
     Aspect Ratio Denominator:
         As long as Aspect Ratio Numerator is positive, this will
         be used as the denominator of the fraction.
-
-**Global shift/zoom image:**<br>
-    Zoom and shift everything on screen, but background pictures.<br>
 
 **Luminosity tied zoom:**<br>
     On older CRT monitors, the picture gets bigger when the image was brighter.<br>
@@ -695,9 +788,10 @@ https://github.com/kokoko3k/koko-aio-slang-misc/tree/main
         Can be used to adjust the bezel rotation
         in relation to the game tilt amount
         
-**Delta Render:**
+**Delta Render:**<br>
     Koko-aio can render only the part of the screen that has been changed,<br>
-    leading to a measurable power consumption reduction.<br>
+    leading to a measurable power consumption reduction and mitigate throttling
+    on mobile devices and laptops.<br>
     This feature can, however, produce artifacts in some cases, so the feature<br>
     is statically disabled by default by now.<br>
     To use it, you have to manually set to 1.0, in file config-user.txt: <br>

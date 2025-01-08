@@ -9,6 +9,7 @@ namespace ares::GameBoyAdvance {
   #include <ares/inline.hpp>
   auto enumerate() -> vector<string>;
   auto load(Node::System& node, string name) -> bool;
+  auto option(string name, string value) -> bool;
 
   enum : u32 {           //mode flags for bus read, write:
     Nonsequential =   1,  //N cycle
@@ -34,4 +35,5 @@ namespace ares::GameBoyAdvance {
   #include <gba/cpu/cpu.hpp>
   #include <gba/ppu/ppu.hpp>
   #include <gba/apu/apu.hpp>
+  #include <gba/display/display.hpp>
 }

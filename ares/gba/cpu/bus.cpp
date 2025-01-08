@@ -1,19 +1,23 @@
 auto CPU::sleep() -> void {
+  dmaRun();
+  ARM7TDMI::irq = irq.synchronizer;
   prefetchStep(1);
 }
 
 template <bool UseDebugger>
 inline auto CPU::getBus(u32 mode, n32 address) -> n32 {
   u32 clocks = _wait(mode, address);
-  u32 word = pipeline.fetch.instruction;
+  u32 word;
 
   if(address >= 0x1000'0000) {
     if constexpr(!UseDebugger) prefetchStep(clocks);
+    return openBus.get(mode, address);
   } else if(address & 0x0800'0000) {
     if(mode & Prefetch && wait.prefetch) {
-      dmaRun();
       prefetchSync(address);
-      word = prefetchRead(mode);
+      prefetchStep(1);
+      word = prefetchRead();
+      if(mode & Word) word |= prefetchRead() << 16;
     } else {
       if constexpr(!UseDebugger) prefetchReset();
       if constexpr(!UseDebugger) step(clocks);
@@ -31,12 +35,17 @@ inline auto CPU::getBus(u32 mode, n32 address) -> n32 {
     else if(address >= 0x0500'0000) word = ppu.readPRAM(mode, address);
     else if((address & 0xffff'fc00) == 0x0400'0000) word = bus.io[address & 0x3ff]->readIO(mode, address);
     else if((address & 0xff00'ffff) == 0x0400'0800) word = ((IO*)this)->readIO(mode, 0x0400'0800 | (address & 3));
+    else return openBus.get(mode, address);
   }
+
+  openBus.set(mode, address, word);
 
   return word;
 }
 
 auto CPU::get(u32 mode, n32 address) -> n32 {
+  dmaRun();
+  ARM7TDMI::irq = irq.synchronizer;
   return getBus<false>(mode, address);
 }
 
@@ -45,6 +54,8 @@ auto CPU::getDebugger(u32 mode, n32 address) -> n32 {
 }
 
 auto CPU::set(u32 mode, n32 address, n32 word) -> void {
+  dmaRun();
+  ARM7TDMI::irq = irq.synchronizer;
   u32 clocks = _wait(mode, address);
 
   if(address >= 0x1000'0000) {
@@ -59,12 +70,23 @@ auto CPU::set(u32 mode, n32 address, n32 word) -> void {
          if(address  < 0x0200'0000) bios.write(mode, address, word);
     else if(address  < 0x0300'0000) writeEWRAM(mode, address, word);
     else if(address  < 0x0400'0000) writeIWRAM(mode, address, word);
-    else if(address >= 0x0700'0000) ppu.writeOAM(mode, address, word);
-    else if(address >= 0x0600'0000) ppu.writeVRAM(mode, address, word);
-    else if(address >= 0x0500'0000) ppu.writePRAM(mode, address, word);
+    else if(address >= 0x0700'0000) { synchronize(ppu); ppu.writeOAM(mode, address, word); }
+    else if(address >= 0x0600'0000) { synchronize(ppu); ppu.writeVRAM(mode, address, word); }
+    else if(address >= 0x0500'0000) { synchronize(ppu); ppu.writePRAM(mode, address, word); }
     else if((address & 0xffff'fc00) == 0x0400'0000) bus.io[address & 0x3ff]->writeIO(mode, address, word);
     else if((address & 0xff00'ffff) == 0x0400'0800) ((IO*)this)->writeIO(mode, 0x0400'0800 | (address & 3), word);
   }
+
+  openBus.set(mode, address, word);
+}
+
+auto CPU::lock() -> void {
+  dmaRun();
+  context.busLocked = true;
+}
+
+auto CPU::unlock() -> void {
+  context.busLocked = false;
 }
 
 auto CPU::_wait(u32 mode, n32 address) -> u32 {
@@ -92,4 +114,32 @@ auto CPU::_wait(u32 mode, n32 address) -> u32 {
   u32 clocks = sequential ? s : n;
   if(mode & Word) clocks += s;  //16-bit bus requires two transfers for words
   return clocks;
+}
+
+auto CPU::OpenBus::get(u32 mode, n32 address) -> n32 {
+  if(mode & Word) address &= ~3;
+  if(mode & Half) address &= ~1;
+  return data >> (8 * (address & 3));
+}
+
+auto CPU::OpenBus::set(u32 mode, n32 address, n32 word) -> void {
+  if(address >> 24 == 0x3) {
+    //open bus from IWRAM only overwrites part of the last IWRAM value accessed
+    if(mode & Word) {
+      iwramData = word;
+    } else if(mode & Half) {
+      if(address & 2) {
+        iwramData.bit(16,31) = (n16)word;
+      } else {
+        iwramData.bit( 0,15) = (n16)word;
+      }
+    } else if(mode & Byte) {
+      iwramData.byte(address & 3) = (n8)word;
+    }
+    data = iwramData;
+  } else {
+    if(mode & Byte) word = (word & 0xff) * 0x01010101;
+    if(mode & Half) word = (word & 0xffff) * 0x00010001;
+    data = word;
+  }
 }

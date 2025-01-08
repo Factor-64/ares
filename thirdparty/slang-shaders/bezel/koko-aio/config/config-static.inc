@@ -14,22 +14,11 @@
 
 
 // STATIC FEATURES ENABLE/DISABLE
-
-// Allow texture wrapping as a shader parameter, prepend // to gain some performance: 
-	#define ALLOW_BG_IMAGE_TEXTURE_WRAP_IN_SHADER
-
 	
 // Enable lcd antighosting by using values > 0.0 (try around 0.25)
 	#define LCD_ANTIGHOSTING 0.0
 
 
-
-// APPEARANCE SETTINGS ////////////////////////////////////////////////////////
-
-// Haloing happens on a scanlined/gapped image or not
-	#define HALO_PRE_SCANLINE_GAP 0.0
-	
-	
 // BEZEL STATIC CONFIG ////////////////////////////////////////////////////////
 
 	//The following defines the monitor frame resolution in textures/monitor_body_[curved/straight].png
@@ -40,7 +29,7 @@
 
 	//The following can slightly correct bezel aspect
 	//eg: #define BEZEL_ASPECT_CORRECTION (1.0 - 0.004) will make it shorter.
-#define BEZEL_ASPECT_CORRECTION (1.0)
+#define BEZEL_ASPECT_CORRECTION 1.0 //(1- ((SERVICE1-0.5) *0.01))  //(1.0 - 0.004)
 
 	//This is used to skip calculations in the reflection blur code.
 	//set it to minimum value that allows you to see reflection entirely
@@ -88,6 +77,11 @@
 	//Set it roughly to  (tube size / bezel total size)
 #define BEZEL_REFL_FADEOUT_START 0.90
 
+	//Values to adapt bezel tilting to content tilting.
+	//I'm not sure what they depends on; works fine on standard bezel tho.
+#define BEZEL_TILT_MULTIPLIER 1.23
+#define BEZEL_TILT_Y_SHIFT 0.32
+
 
 // AMBIENT LIGHT STATIC CONFIG ##########################################################################################
 
@@ -127,19 +121,28 @@
 #define IN_GLOW_BIAS_MAX 1.0
 
 	//Try to keep blur sizes consistent across input resolutions
-#define SCALEMOD_X 360
-#define SCALEMOD_Y 270
-#define NEW_SCALEMOD_X (global.flick_and_noise_passSize.x/(360.0*2.0) / 2.2)
-#define NEW_SCALEMOD_Y (global.flick_and_noise_passSize.y/(270.0*2.0) / 2.2)
+#define NEW_SCALEMOD_REF_X 360.0
+#define NEW_SCALEMOD_REF_Y 270.0
+#define NEW_SCALEMOD_X (global.upscale_passSize.x/(NEW_SCALEMOD_REF_X*2.0) / 2.2)
+#define NEW_SCALEMOD_Y (global.upscale_passSize.y/(NEW_SCALEMOD_REF_Y*2.0) / 2.2)
+
+	//Hardcoded radius scale factor used by bloom and halo.
+#define BLOOM_AND_HALO_SCALE_FACTOR 360.0
 
 	// AUTOCROP
 //which coords holds the autocrop zoom value
 #define AUTOCROP_SAMPLING_POINT vec2(0.125)
+
+	// Luminosity tied zoom sampling point
+#define DYN_ZOOM_SAMPLING_POINT vec2(0.75)
 	
+	//Sampling points from test pass
+#define SMP_RANGE1 vec4(0.24,0.24  ,  0.26,0.26)
+#define SMP_POINT1 vec2(         0.25          )
 	
 // RESOLUTION SWITCH GLITCH EMULATION ##########################################################################################
 	//Where to sample alpha from avglum pass to understand if resolution has changed (very internal setting) 
-#define RESSWITCH_SAMPLING_POINT vec2(0.95) 
+#define RESSWITCH_SAMPLING_POINT vec2(0.9) 
 	//How much the resolution have to change for shake to be activated (in relation to the old size).
 #define RESSWITCH_GLITCH_TRESHOLD 0.1
 	//How fast is the shake [0.01 -> 1]
@@ -152,6 +155,8 @@
 	//Temporal noise strength applied on green channel when green is dark over ambient lights (multiplied by NOISEPOWER)
 #define NOISEPOWER_AMBI_MUL 3.0
 
+// This is an attempt to improve preceived motion clarity by flickering the moving part of the game
+#define FLICKER_IN_MOTION 0.0
 
 
 // STATIC CONFIG ENDS HERE ##########################################################################################
